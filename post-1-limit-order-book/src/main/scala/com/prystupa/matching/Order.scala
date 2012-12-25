@@ -17,5 +17,5 @@ trait Order {
 
 case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
 
-  def bookDisplay = limit.toString
+  override val bookDisplay = limit.toString
 }

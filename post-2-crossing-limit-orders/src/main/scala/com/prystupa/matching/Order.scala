@@ -22,5 +22,5 @@ case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) ex
   override def decreasedBy(qty: Double): LimitOrder =
     LimitOrder(broker, side, this.qty - qty, limit)
 
-  def bookDisplay = limit.toString
+  override val bookDisplay = limit.toString
 }
