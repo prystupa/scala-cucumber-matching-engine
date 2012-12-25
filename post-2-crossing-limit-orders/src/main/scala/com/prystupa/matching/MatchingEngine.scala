@@ -9,7 +9,7 @@ package com.prystupa.matching
 
 class MatchingEngine(buy: OrderBook, sell: OrderBook) {
 
-  def acceptOrder(order: LimitOrder): List[Trade] = {
+  def acceptOrder(order: Order): List[Trade] = {
 
     val (book, counterBook) = getBooks(order.side)
     val (unfilledOrder, trades) = tryMatch(order, counterBook, Nil)
@@ -24,7 +24,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
     case Sell => (sell, buy)
   }
 
-  private def tryMatch(order: LimitOrder, counterBook: OrderBook, trades: List[Trade]): (Option[Order], List[Trade]) = {
+  private def tryMatch(order: Order, counterBook: OrderBook, trades: List[Trade]): (Option[Order], List[Trade]) = {
 
     if (order.qty == 0) (None, trades)
     else if (counterBook.orders.isEmpty) (Some(order), trades)
@@ -37,12 +37,13 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
     }
   }
 
-  private def tryMatchWithTop(order: LimitOrder, top: Order): Option[Trade] = top match {
+  private def tryMatchWithTop(order: Order, top: Order): Option[Trade] = top match {
 
-    case topLimitOrder: LimitOrder => {
-      val (buy, sell) = if (order.side == Buy) (order, topLimitOrder) else (topLimitOrder, order)
-
-      if (buy.limit >= sell.limit) Some(Trade(buy.broker, sell.broker, topLimitOrder.limit, math.min(buy.qty, sell.qty)))
+    case topLimit: LimitOrder => {
+      if (order.crossesAt(topLimit.limit)) {
+        val (buy, sell) = if (order.side == Buy) (order, topLimit) else (topLimit, order)
+        Some(Trade(buy.broker, sell.broker, topLimit.limit, math.min(buy.qty, sell.qty)))
+      }
       else None
     }
   }

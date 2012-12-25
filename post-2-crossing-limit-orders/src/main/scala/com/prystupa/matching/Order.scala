@@ -12,12 +12,19 @@ trait Order {
   val qty: Double
   val side: Side
 
+  def crossesAt(price: Double): Boolean
+
   def decreasedBy(qty: Double): Order
 
   def bookDisplay: String
 }
 
 case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
+
+  override def crossesAt(price: Double): Boolean = side match {
+    case Buy => limit >= price
+    case Sell => limit <= price
+  }
 
   override def decreasedBy(qty: Double): LimitOrder =
     LimitOrder(broker, side, this.qty - qty, limit)
