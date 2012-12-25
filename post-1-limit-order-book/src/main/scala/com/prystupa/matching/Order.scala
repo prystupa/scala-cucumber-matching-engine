@@ -15,12 +15,6 @@ trait Order {
   def typeString: String
 }
 
-trait Side
-
-case object Buy extends Side
-
-case object Sell extends Side
-
 case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
 
   def typeString = limit.toString

@@ -7,12 +7,6 @@ package com.prystupa.matching
  * Time: 11:59 AM
  */
 
-trait Side
-
-case object Buy extends Side
-
-case object Sell extends Side
-
 trait Order {
   val broker: String
   val qty: Double
