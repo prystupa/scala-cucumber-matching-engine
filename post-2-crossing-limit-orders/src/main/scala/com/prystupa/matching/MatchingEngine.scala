@@ -24,7 +24,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
     case Sell => (sell, buy)
   }
 
-  private def tryMatch(order: LimitOrder, counterBook: OrderBook, trades: List[Trade]): (Option[LimitOrder], List[Trade]) = {
+  private def tryMatch(order: LimitOrder, counterBook: OrderBook, trades: List[Trade]): (Option[Order], List[Trade]) = {
 
     if (order.qty == 0) (None, trades)
     else if (counterBook.orders.isEmpty) (Some(order), trades)
