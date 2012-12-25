@@ -76,7 +76,7 @@ Feature: Core Functionality for Order Book
       | A      | 100 | 10.7  |
       | B      | 100 | 10.7  |
 
-  Scenario Outline: : Decrease top outstanding order partially and then fill it completely
+  Scenario Outline: Decrease top outstanding order partially and then fill it completely
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price |
       | A      | 100 | 10.5  |
