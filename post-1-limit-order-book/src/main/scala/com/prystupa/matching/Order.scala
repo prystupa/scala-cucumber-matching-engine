@@ -12,10 +12,10 @@ trait Order {
   val qty: Double
   val side: Side
 
-  def typeString: String
+  def bookDisplay: String
 }
 
 case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
 
-  def typeString = limit.toString
+  def bookDisplay = limit.toString
 }

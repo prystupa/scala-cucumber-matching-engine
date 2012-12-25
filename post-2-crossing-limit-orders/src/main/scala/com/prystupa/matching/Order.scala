@@ -14,12 +14,13 @@ trait Order {
 
   def decreasedBy(qty: Double): Order
 
-  def typeString: String
+  def bookDisplay: String
 }
 
 case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
 
-  override def decreasedBy(qty: Double): LimitOrder = LimitOrder(broker, side, this.qty - qty, limit)
+  override def decreasedBy(qty: Double): LimitOrder =
+    LimitOrder(broker, side, this.qty - qty, limit)
 
-  def typeString = limit.toString
+  def bookDisplay = limit.toString
 }
