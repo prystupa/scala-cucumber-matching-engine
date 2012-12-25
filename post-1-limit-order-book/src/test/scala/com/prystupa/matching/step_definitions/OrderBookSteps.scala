@@ -25,7 +25,7 @@ class OrderBookSteps extends ShouldMatchers {
 
     val book = getBook(side)
     val orders = orderTable.asList[OrderRow](classOf[OrderRow]).toList.map(
-      r => LimitOrder(r.broker, r.qty, book.side, r.price))
+      r => LimitOrder(r.broker, book.side, r.qty, r.price))
 
     orders.foreach(book.add)
   }

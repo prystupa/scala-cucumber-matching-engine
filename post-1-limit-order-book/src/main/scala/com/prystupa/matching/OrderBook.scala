@@ -1,8 +1,5 @@
 package com.prystupa.matching
 
-import collection.mutable
-
-
 /**
  * Created with IntelliJ IDEA.
  * User: eprystupa
@@ -12,38 +9,27 @@ import collection.mutable
 
 class OrderBook(val side: Side) {
 
-  private val bookOrders: mutable.LinkedList[Order] = mutable.LinkedList.empty
+  private var book: List[Order] = Nil
 
   def add(order: LimitOrder) {
 
-    insert(order, bookOrders)
-  }
-
-  def orders: List[Order] = bookOrders.toList
-
-  private def compareOrders(order: LimitOrder, bookOrder: Order): Int = {
-    bookOrder match {
-      case LimitOrder(_, _, _, limit) => side match {
-        case Buy => order.limit.compare(limit)
-        case Sell => limit.compare(order.limit)
-      }
+    def insert(orders: List[Order]): List[Order] = orders match {
+      case Nil => List(order)
+      case bookOrder :: tail =>
+        if (compareOrders(order, bookOrder) > 0) order :: bookOrder :: tail
+        else bookOrder :: insert(tail)
     }
+
+    book = insert(book)
   }
 
-  private def insert(order: LimitOrder, orders: mutable.LinkedList[Order]) {
+  def orders: List[Order] = book
 
-    if (orders.isEmpty) {
-      orders.elem = order
-      orders.next = mutable.LinkedList.empty
-    } else {
-      val bookOrder = orders.elem
-      if (compareOrders(order, bookOrder) > 0) {
-        orders.next = new mutable.LinkedList(orders.elem, orders.next)
-        orders.elem = order
-      }
-      else {
-        insert(order, orders.next)
-      }
+
+  private def compareOrders(order: LimitOrder, bookOrder: Order): Int = bookOrder match {
+    case LimitOrder(_, _, _, limit) => side match {
+      case Buy => order.limit.compare(limit)
+      case Sell => limit.compare(order.limit)
     }
   }
 }

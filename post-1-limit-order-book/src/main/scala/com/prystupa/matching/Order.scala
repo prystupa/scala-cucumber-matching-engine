@@ -21,7 +21,7 @@ case object Buy extends Side
 
 case object Sell extends Side
 
-case class LimitOrder(broker: String, qty: Double, side: Side, limit: Double) extends Order {
+case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
 
   def typeString = limit.toString
 }
