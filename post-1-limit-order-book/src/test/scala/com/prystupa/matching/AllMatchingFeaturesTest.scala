@@ -11,6 +11,6 @@ import cucumber.api.junit.Cucumber
  */
 
 @RunWith(classOf[Cucumber])
-class OrderBookTest {
+class AllMatchingFeaturesTest {
 
 }
