@@ -10,6 +10,7 @@
 
     <modules>
     	<module>post-1-limit-order-book</module>
+        <module>post-2-crossing-limit-orders</module>
     </modules>
 
     <properties>
