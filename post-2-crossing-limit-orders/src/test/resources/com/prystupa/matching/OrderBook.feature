@@ -8,7 +8,6 @@ Feature: Core Functionality for Order Book
       | Broker | Qty | Price |
       | A      | 100 | 10.5  |
 
-  @focus
   Scenario: Add two limit orders to the BUY order book, with more aggressive order first
     When the following orders are added to the "Buy" book:
       | Broker | Qty | Price |
