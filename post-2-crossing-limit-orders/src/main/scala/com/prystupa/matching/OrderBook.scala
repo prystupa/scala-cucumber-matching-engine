@@ -12,7 +12,7 @@ class OrderBook(val side: Side) {
 
   private var book: List[Order] = Nil
 
-  def add(order: LimitOrder) {
+  def add(order: Order) {
 
     def insert(orders: List[Order]): List[Order] = orders match {
       case Nil => List(order)
@@ -33,10 +33,10 @@ class OrderBook(val side: Side) {
     }
   }
 
-  private def compareOrders(order: LimitOrder, bookOrder: Order): Int = bookOrder match {
-    case LimitOrder(_, _, _, limit) => side match {
-      case Buy => order.limit.compare(limit)
-      case Sell => limit.compare(order.limit)
+  private def compareOrders(order: Order, bookOrder: Order): Int = (order, bookOrder) match {
+    case (LimitOrder(_, _, _, limit), LimitOrder(_, _, _, bookLimit)) => side match {
+      case Buy => limit.compare(bookLimit)
+      case Sell => bookLimit.compare(limit)
     }
   }
 }
