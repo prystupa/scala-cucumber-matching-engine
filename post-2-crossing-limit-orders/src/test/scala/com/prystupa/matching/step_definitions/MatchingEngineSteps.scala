@@ -36,8 +36,8 @@ class MatchingEngineSteps extends ShouldMatchers {
 
     val (buyOrders, sellOrders) = parseExpectedBooks(book)
 
-    buyBook.orders should equal(buyOrders)
-    sellBook.orders should equal(sellOrders)
+    buyBook.orders.map(o => BookRow(Buy, o.broker, o.qty, o.bookDisplay)) should equal(buyOrders)
+    sellBook.orders.map(o => BookRow(Sell, o.broker, o.qty, o.bookDisplay)) should equal(sellOrders)
   }
 
   @Then("^the following trades are generated:$")
@@ -54,11 +54,11 @@ class MatchingEngineSteps extends ShouldMatchers {
   }
 
 
-  private def parseExpectedBooks(book: DataTable): (List[Order], List[Order]) = {
+  private def parseExpectedBooks(book: DataTable): (List[BookRow], List[BookRow]) = {
     def buildOrders(orders: List[List[String]], side: Side) = {
       orders.filterNot(_.forall(_.isEmpty)).map(order => {
         val (broker :: qty :: price :: Nil) = order
-        LimitOrder(broker, side, qty.toDouble, price.toDouble)
+        BookRow(side, broker, qty.toDouble, price)
       })
     }
 
@@ -74,5 +74,7 @@ class MatchingEngineSteps extends ShouldMatchers {
   }
 
   private case class OrderRow(broker: String, side: String, qty: Double, price: String)
+
+  private case class BookRow(side: Side, broker: String, qty: Double, price: String)
 
 }
