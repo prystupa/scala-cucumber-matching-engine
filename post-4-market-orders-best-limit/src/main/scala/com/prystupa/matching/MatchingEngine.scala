@@ -39,14 +39,28 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
     }
   }
 
-  private def tryMatchWithTop(order: Order, top: Order): Option[Trade] = top match {
+  private def tryMatchWithTop(order: Order, top: Order): Option[Trade] = {
+    def trade(price: Double) = {
+      val (buy, sell) = if (order.side == Buy) (order, top) else (top, order)
+      Some(Trade(buy.broker, sell.broker, price, math.min(buy.qty, sell.qty)))
+    }
 
-    case topLimit: LimitOrder => {
-      if (order.crossesAt(topLimit.limit)) {
-        val (buy, sell) = if (order.side == Buy) (order, topLimit) else (topLimit, order)
-        Some(Trade(buy.broker, sell.broker, topLimit.limit, math.min(buy.qty, sell.qty)))
+    lazy val oppositeBestLimit = {
+      val oppositeBook = if (order.side == Buy) sell else buy
+      oppositeBook.bestLimit
+    }
+
+    (order, top) match {
+
+      case (_, topLimitOrder: LimitOrder) => {
+        if (order.crossesAt(topLimitOrder.limit)) trade(topLimitOrder.limit)
+        else None
       }
-      else None
+
+      case (limitOrder: LimitOrder, _: MarketOrder) => trade(oppositeBestLimit match {
+        case Some(limit) => if (limitOrder.crossesAt(limit)) limit else limitOrder.limit
+        case None => limitOrder.limit
+      })
     }
   }
 }
