@@ -11,7 +11,7 @@ package com.prystupa.matching
 class OrderBook(val side: Side) {
 
   private var market: List[Order] = Nil
-  private var book: List[(Double, List[Order])] = Nil
+  private var limit: List[(Double, List[Order])] = Nil
   private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
 
   def add(order: Order) {
@@ -27,14 +27,14 @@ class OrderBook(val side: Side) {
             case _ => head :: insert(tail)
           }
         }
-        book = insert(book)
+        limit = insert(limit)
       }
     }
   }
 
   def top: Option[Order] = market match {
     case head :: _ => Some(head)
-    case _ => book.headOption.map({
+    case _ => limit.headOption.map({
       case (_, orders) => orders.head
     })
   }
@@ -43,10 +43,10 @@ class OrderBook(val side: Side) {
 
     market match {
       case top :: tail => market = if (qty == top.qty) tail else top.decreasedBy(qty) :: tail
-      case _ => book match {
+      case _ => limit match {
         case ((level, orders) :: tail) => {
           val (top :: rest) = orders
-          book = (qty == top.qty, rest.isEmpty) match {
+          limit = (qty == top.qty, rest.isEmpty) match {
             case (true, true) => tail
             case (true, false) => (level, rest) :: tail
             case _ => (level, top.decreasedBy(qty) :: rest) :: tail
@@ -57,12 +57,12 @@ class OrderBook(val side: Side) {
     }
   }
 
-  def orders(): List[Order] = market ::: book.flatMap({
+  def orders(): List[Order] = market ::: limit.flatMap({
     case (_, orders) => orders
   })
 
   private def priceLevel(order: Order): Option[Double] = order match {
-    case LimitOrder(_, _, _, limit) => Some(limit)
+    case LimitOrder(_, _, _, priceLimit) => Some(priceLimit)
     case _: MarketOrder => None
   }
 }

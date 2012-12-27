@@ -10,7 +10,7 @@ package com.prystupa.matching
 
 class OrderBook(val side: Side) {
 
-  private var book: List[(Double, List[Order])] = Nil
+  private var limit: List[(Double, List[Order])] = Nil
   private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
 
   def add(order: Order) {
@@ -26,19 +26,19 @@ class OrderBook(val side: Side) {
       }
     }
 
-    book = insert(book)
+    limit = insert(limit)
   }
 
-  def top: Option[Order] = book.headOption.map({
+  def top: Option[Order] = limit.headOption.map({
     case (_, orders) => orders.head
   })
 
   def decreaseTopBy(qty: Double) {
 
-    book match {
+    limit match {
       case ((level, orders) :: tail) => {
         val (top :: rest) = orders
-        book = (qty == top.qty, rest.isEmpty) match {
+        limit = (qty == top.qty, rest.isEmpty) match {
           case (true, true) => tail
           case (true, false) => (level, rest) :: tail
           case _ => (level, top.decreasedBy(qty) :: rest) :: tail
@@ -48,11 +48,11 @@ class OrderBook(val side: Side) {
     }
   }
 
-  def orders(): List[Order] = book.flatMap({
+  def orders(): List[Order] = limit.flatMap({
     case (_, orders) => orders
   })
 
   private def priceLevel(order: Order): Double = order match {
-    case LimitOrder(_, _, _, limit) => limit
+    case LimitOrder(_, _, _, priceLimit) => priceLimit
   }
 }
