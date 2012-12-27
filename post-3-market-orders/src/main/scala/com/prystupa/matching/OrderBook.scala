@@ -10,36 +10,59 @@ package com.prystupa.matching
 
 class OrderBook(val side: Side) {
 
-  private var book: List[Order] = Nil
+  private var market: List[Order] = Nil
+  private var book: List[(Double, List[Order])] = Nil
+  private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
 
   def add(order: Order) {
 
-    def insert(orders: List[Order]): List[Order] = orders match {
-      case Nil => List(order)
-      case bookOrder :: tail =>
-        if (compareOrders(order, bookOrder) > 0) order :: bookOrder :: tail
-        else bookOrder :: insert(tail)
+    priceLevel(order) match {
+      case None => market = market :+ order
+      case Some(level) => {
+        def insert(list: List[(Double, List[Order])]): List[(Double, List[Order])] = list match {
+          case Nil => List((level, List(order)))
+          case (head@(bookLevel, orders)) :: tail => priceOrdering.compare(level, bookLevel) match {
+            case 0 => (bookLevel, orders :+ order) :: tail
+            case n if n < 0 => (level, List(order)) :: list
+            case _ => head :: insert(tail)
+          }
+        }
+        book = insert(book)
+      }
     }
-
-    book = insert(book)
   }
 
-  def orders: List[Order] = book
+  def top: Option[Order] = market match {
+    case head :: _ => Some(head)
+    case _ => book.headOption.map({
+      case (_, orders) => orders.head
+    })
+  }
 
   def decreaseTopBy(qty: Double) {
-    book = book match {
-      case head :: tail => if (qty == head.qty) tail else head.decreasedBy(qty) :: tail
-      case Nil => throw new IllegalStateException("Can't decrease top order in empty book")
+
+    market match {
+      case top :: tail => market = if (qty == top.qty) tail else top.decreasedBy(qty) :: tail
+      case _ => book match {
+        case ((level, orders) :: tail) => {
+          val (top :: rest) = orders
+          book = (qty == top.qty, rest.isEmpty) match {
+            case (true, true) => tail
+            case (true, false) => (level, rest) :: tail
+            case _ => (level, top.decreasedBy(qty) :: rest) :: tail
+          }
+        }
+        case Nil => throw new IllegalStateException()
+      }
     }
   }
 
-  private def compareOrders(order: Order, bookOrder: Order): Int = (order, bookOrder) match {
-    case (_: MarketOrder, _: MarketOrder) => 0
-    case (_, _: MarketOrder) => -1
-    case (_: MarketOrder, _) => 1
-    case (LimitOrder(_, _, _, limit), LimitOrder(_, _, _, bookLimit)) => side match {
-      case Buy => limit.compare(bookLimit)
-      case Sell => bookLimit.compare(limit)
-    }
+  def orders(): List[Order] = market ::: book.flatMap({
+    case (_, orders) => orders
+  })
+
+  private def priceLevel(order: Order): Option[Double] = order match {
+    case LimitOrder(_, _, _, limit) => Some(limit)
+    case _: MarketOrder => None
   }
 }

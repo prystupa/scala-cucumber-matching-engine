@@ -36,8 +36,8 @@ class MatchingEngineSteps extends ShouldMatchers {
 
     val (buyOrders, sellOrders) = parseExpectedBooks(book)
 
-    buyBook.orders.map(o => BookRow(Buy, o.broker, o.qty, o.bookDisplay)) should equal(buyOrders)
-    sellBook.orders.map(o => BookRow(Sell, o.broker, o.qty, o.bookDisplay)) should equal(sellOrders)
+    buyBook.orders().map(o => BookRow(Buy, o.broker, o.qty, o.bookDisplay)) should equal(buyOrders)
+    sellBook.orders().map(o => BookRow(Sell, o.broker, o.qty, o.bookDisplay)) should equal(sellOrders)
   }
 
   @Then("^the following trades are generated:$")

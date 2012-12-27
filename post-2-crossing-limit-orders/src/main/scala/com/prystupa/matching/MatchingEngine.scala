@@ -27,12 +27,14 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
   private def tryMatch(order: Order, counterBook: OrderBook, trades: List[Trade]): (Option[Order], List[Trade]) = {
 
     if (order.qty == 0) (None, trades)
-    else if (counterBook.orders.isEmpty) (Some(order), trades)
-    else tryMatchWithTop(order, counterBook.orders.head) match {
+    else counterBook.top match {
       case None => (Some(order), trades)
-      case Some(trade) => {
-        counterBook.decreaseTopBy(trade.qty)
-        tryMatch(order.decreasedBy(trade.qty), counterBook, trade :: trades)
+      case Some(top) => tryMatchWithTop(order, top) match {
+        case None => (Some(order), trades)
+        case Some(trade) => {
+          counterBook.decreaseTopBy(trade.qty)
+          tryMatch(order.decreasedBy(trade.qty), counterBook, trade :: trades)
+        }
       }
     }
   }

@@ -1,5 +1,6 @@
 package com.prystupa.matching
 
+
 /**
  * Created with IntelliJ IDEA.
  * User: eprystupa
@@ -9,27 +10,30 @@ package com.prystupa.matching
 
 class OrderBook(val side: Side) {
 
-  private var book: List[Order] = Nil
+  private var book: List[(Double, List[Order])] = Nil
+  private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
 
   def add(order: Order) {
 
-    def insert(orders: List[Order]): List[Order] = orders match {
-      case Nil => List(order)
-      case bookOrder :: tail =>
-        if (compareOrders(order, bookOrder) > 0) order :: bookOrder :: tail
-        else bookOrder :: insert(tail)
+    val level = priceLevel(order)
+
+    def insert(list: List[(Double, List[Order])]): List[(Double, List[Order])] = list match {
+      case Nil => List((level, List(order)))
+      case (head@(bookLevel, orders)) :: tail => priceOrdering.compare(level, bookLevel) match {
+        case 0 => (bookLevel, orders :+ order) :: tail
+        case n if n < 0 => (level, List(order)) :: list
+        case _ => head :: insert(tail)
+      }
     }
 
     book = insert(book)
   }
 
-  def orders: List[Order] = book
+  def orders(): List[Order] = book.flatMap({
+    case (_, orders) => orders
+  })
 
-
-  private def compareOrders(order: Order, bookOrder: Order): Int = (order, bookOrder) match {
-    case (LimitOrder(_, _, _, limit), LimitOrder(_, _, _, bookLimit)) => side match {
-      case Buy => limit.compare(bookLimit)
-      case Sell => bookLimit.compare(limit)
-    }
+  private def priceLevel(order: Order): Double = order match {
+    case LimitOrder(_, _, _, limit) => limit
   }
 }

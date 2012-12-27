@@ -35,7 +35,7 @@ class OrderBookSteps extends ShouldMatchers {
 
     val book = getBook(side)
     val expectedBook = bookTable.asList[BookRow](classOf[BookRow]).toList
-    val actualBook = book.orders.map(o => BookRow(o.broker, o.qty, o.bookDisplay))
+    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, o.bookDisplay))
 
     actualBook should equal(expectedBook)
   }
