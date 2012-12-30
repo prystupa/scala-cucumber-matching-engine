@@ -38,7 +38,7 @@ class OrderBookSteps extends ShouldMatchers {
 
     val book = getBook(side)
     val expectedBook = bookTable.asList[BookRow](classOf[BookRow]).toList
-    val actualBook = book.orders.map(o => BookRow(o.broker, o.qty, o.bookDisplay))
+    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, o.bookDisplay))
 
     actualBook should equal(expectedBook)
   }
@@ -66,7 +66,7 @@ class OrderBookSteps extends ShouldMatchers {
   def the_top_order_goes_away_from_the_book(side: String) {
 
     val book = getBook(side)
-    book.decreaseTopBy(book.orders.head.qty)
+    book.decreaseTopBy(book.orders().head.qty)
   }
 
   def getBook(side: String): OrderBook = side match {
