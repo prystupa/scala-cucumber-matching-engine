@@ -16,7 +16,7 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
   def add(order: Order) {
 
-    priceLevel(order) match {
+    orderTypes(order).price match {
       case None => market = market :+ order
       case Some(level) => {
         def insert(list: List[(Double, List[Order])]): List[(Double, List[Order])] = list match {
@@ -64,9 +64,4 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
   def orders(): List[Order] = market ::: limit.flatMap({
     case (_, orders) => orders
   })
-
-  private def priceLevel(order: Order): Option[Double] = order match {
-    case LimitOrder(_, _, _, priceLimit) => Some(priceLimit)
-    case _: MarketOrder => None
-  }
 }

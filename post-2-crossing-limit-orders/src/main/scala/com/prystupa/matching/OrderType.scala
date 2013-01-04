@@ -25,12 +25,12 @@ object OrderType {
 
       def price: Option[Double] = Some(limit)
 
-      override def crossesAt(price: Double): Boolean = side match {
+      def crossesAt(price: Double): Boolean = side match {
         case Buy => price <= limit
         case Sell => price >= limit
       }
 
-      override def decreasedBy(qty: Double): LimitOrder =
+      def decreasedBy(qty: Double): LimitOrder =
         self.copy(qty = self.qty - qty)
     }
   }
