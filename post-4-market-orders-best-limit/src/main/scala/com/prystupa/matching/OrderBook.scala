@@ -8,7 +8,7 @@ package com.prystupa.matching
  * Time: 1:33 PM
  */
 
-class OrderBook(val side: Side) {
+class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
   private var market: List[Order] = Nil
   private var limit: List[(Double, List[Order])] = Nil
@@ -46,14 +46,14 @@ class OrderBook(val side: Side) {
   def decreaseTopBy(qty: Double) {
 
     market match {
-      case top :: tail => market = if (qty == top.qty) tail else top.decreasedBy(qty) :: tail
+      case top :: tail => market = if (qty == top.qty) tail else orderTypes(top).decreasedBy(qty) :: tail
       case _ => limit match {
         case ((level, orders) :: tail) => {
           val (top :: rest) = orders
           limit = (qty == top.qty, rest.isEmpty) match {
             case (true, true) => tail
             case (true, false) => (level, rest) :: tail
-            case _ => (level, top.decreasedBy(qty) :: rest) :: tail
+            case _ => (level, orderTypes(top).decreasedBy(qty) :: rest) :: tail
           }
         }
         case Nil => throw new IllegalStateException()

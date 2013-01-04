@@ -7,7 +7,7 @@ package com.prystupa.matching
  * Time: 8:14 PM
  */
 
-class MatchingEngine(buy: OrderBook, sell: OrderBook) {
+class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => OrderType)) {
 
   private var _referencePrice: Option[Double] = None
 
@@ -41,7 +41,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
         case None => (Some(order), trades)
         case Some(trade) => {
           counterBook.decreaseTopBy(trade.qty)
-          tryMatch(order.decreasedBy(trade.qty), counterBook, trade :: trades)
+          tryMatch(orderTypes(order).decreasedBy(trade.qty), counterBook, trade :: trades)
         }
       }
     }
@@ -62,12 +62,12 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
     (order, top) match {
 
       case (_, topLimitOrder: LimitOrder) => {
-        if (order.crossesAt(topLimitOrder.limit)) trade(topLimitOrder.limit)
+        if (orderTypes(order).crossesAt(topLimitOrder.limit)) trade(topLimitOrder.limit)
         else None
       }
 
       case (limitOrder: LimitOrder, _: MarketOrder) => trade(oppositeBestLimit match {
-        case Some(limit) => if (limitOrder.crossesAt(limit)) limit else limitOrder.limit
+        case Some(limit) => if (orderTypes(limitOrder).crossesAt(limit)) limit else limitOrder.limit
         case None => limitOrder.limit
       })
 

@@ -16,34 +16,35 @@ import cucumber.api.java.en.{Then, Given}
 
 class OrderBookSteps extends ShouldMatchers {
 
-  val buyBook = new OrderBook(Buy)
-  val sellBook = new OrderBook(Sell)
+  val orderTypes = OrderType.all()
+  val buyBook: OrderBook = new OrderBook(Buy, orderTypes)
+  val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
 
 
   @Given("^the following orders are added to the \"([^\"]*)\" book:$")
-  def the_following_orders_are_added_to_the_book(side: String, orderTable: DataTable) {
+  def the_following_orders_are_added_to_the_book(sideString: String, orderTable: DataTable) {
 
-    val book = getBook(side)
+    val (side, book) = getBook(sideString)
     val orders = orderTable.asList[OrderRow](classOf[OrderRow]).toList.map(
-      r => LimitOrder(r.broker, book.side, r.qty, r.price.toDouble))
+      r => LimitOrder(r.broker, side, r.qty, r.price.toDouble))
 
     orders.foreach(book.add)
   }
 
   @Then("^the \"([^\"]*)\" order book looks like:$")
-  def the_order_book_looks_like(side: String, bookTable: DataTable) {
+  def the_order_book_looks_like(sideString: String, bookTable: DataTable) {
 
-    val book = getBook(side)
+    val (_, book) = getBook(sideString)
     val expectedBook = bookTable.asList[BookRow](classOf[BookRow]).toList
-    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, o.bookDisplay))
+    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, orderTypes(o).bookDisplay))
 
     actualBook should equal(expectedBook)
   }
 
 
-  def getBook(side: String): OrderBook = side match {
-    case "Buy" => buyBook
-    case "Sell" => sellBook
+  def getBook(side: String) = side match {
+    case "Buy" => (Buy, buyBook)
+    case "Sell" => (Sell, sellBook)
   }
 
   case class OrderRow(broker: String, qty: Double, price: String)

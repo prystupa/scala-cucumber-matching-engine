@@ -16,9 +16,10 @@ import org.scalatest.matchers.ShouldMatchers
 
 class MatchingEngineSteps extends ShouldMatchers {
 
-  val buyBook = new OrderBook(Buy)
-  val sellBook = new OrderBook(Sell)
-  val matchingEngine = new MatchingEngine(buy = buyBook, sell = sellBook)
+  val orderTypes = OrderType.all()
+  val buyBook: OrderBook = new OrderBook(Buy, orderTypes)
+  val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
+  val matchingEngine = new MatchingEngine(buyBook, sellBook, orderTypes)
 
   var actualTrades = List[Trade]()
 
@@ -38,8 +39,8 @@ class MatchingEngineSteps extends ShouldMatchers {
 
     val (buyOrders, sellOrders) = parseExpectedBooks(book)
 
-    buyBook.orders().map(o => BookRow(Buy, o.broker, o.qty, o.bookDisplay)) should equal(buyOrders)
-    sellBook.orders().map(o => BookRow(Sell, o.broker, o.qty, o.bookDisplay)) should equal(sellOrders)
+    buyBook.orders().map(o => BookRow(Buy, o.broker, o.qty, orderTypes(o).bookDisplay)) should equal(buyOrders)
+    sellBook.orders().map(o => BookRow(Sell, o.broker, o.qty, orderTypes(o).bookDisplay)) should equal(sellOrders)
   }
 
   @Then("^the following trades are generated:$")

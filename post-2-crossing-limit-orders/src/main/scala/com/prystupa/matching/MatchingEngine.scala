@@ -7,7 +7,7 @@ package com.prystupa.matching
  * Time: 8:14 PM
  */
 
-class MatchingEngine(buy: OrderBook, sell: OrderBook) {
+class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => OrderType)) {
 
   def acceptOrder(order: Order): List[Trade] = {
 
@@ -33,7 +33,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
         case None => (Some(order), trades)
         case Some(trade) => {
           counterBook.decreaseTopBy(trade.qty)
-          tryMatch(order.decreasedBy(trade.qty), counterBook, trade :: trades)
+          tryMatch(orderTypes(order).decreasedBy(trade.qty), counterBook, trade :: trades)
         }
       }
     }
@@ -42,7 +42,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook) {
   private def tryMatchWithTop(order: Order, top: Order): Option[Trade] = top match {
 
     case topLimit: LimitOrder => {
-      if (order.crossesAt(topLimit.limit)) {
+      if (orderTypes(order).crossesAt(topLimit.limit)) {
         val (buy, sell) = if (order.side == Buy) (order, topLimit) else (topLimit, order)
         Some(Trade(buy.broker, sell.broker, topLimit.limit, math.min(buy.qty, sell.qty)))
       }

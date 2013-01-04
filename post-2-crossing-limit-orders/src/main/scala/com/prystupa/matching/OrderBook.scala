@@ -8,7 +8,7 @@ package com.prystupa.matching
  * Time: 1:33 PM
  */
 
-class OrderBook(val side: Side) {
+class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
   private var limit: List[(Double, List[Order])] = Nil
   private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
@@ -41,7 +41,7 @@ class OrderBook(val side: Side) {
         limit = (qty == top.qty, rest.isEmpty) match {
           case (true, true) => tail
           case (true, false) => (level, rest) :: tail
-          case _ => (level, top.decreasedBy(qty) :: rest) :: tail
+          case _ => (level, orderTypes(top).decreasedBy(qty) :: rest) :: tail
         }
       }
       case Nil => throw new IllegalStateException()

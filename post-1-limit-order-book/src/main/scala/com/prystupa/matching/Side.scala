@@ -7,7 +7,7 @@ package com.prystupa.matching
  * Time: 3:13 PM
  */
 
-trait Side
+sealed trait Side
 
 case object Buy extends Side
 
