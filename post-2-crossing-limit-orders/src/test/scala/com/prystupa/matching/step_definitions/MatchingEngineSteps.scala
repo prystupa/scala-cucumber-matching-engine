@@ -56,6 +56,7 @@ class MatchingEngineSteps extends ShouldMatchers {
     actualTrades should equal(Nil)
   }
 
+
   private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
     matchingEngine.subscribe(new matchingEngine.Sub {
       def notify(pub: matchingEngine.Pub, event: OrderBookEvent) {

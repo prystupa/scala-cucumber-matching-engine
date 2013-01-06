@@ -46,7 +46,7 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
           case _ => (level, orderTypes(top).decreasedBy(qty) :: rest) :: tail
         }
       }
-      case Nil => throw new IllegalStateException()
+      case Nil => throw new IllegalStateException("No top order in the empty book")
     }
   }
 
