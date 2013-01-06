@@ -23,15 +23,18 @@ class MatchingEngineSteps extends ShouldMatchers {
 
   var actualTrades = List[Trade]()
 
+  events {
+    case trade: Trade => actualTrades = trade :: actualTrades
+  }
+
 
   @When("^the following orders are submitted in this order:$")
   def the_following_orders_are_submitted_in_this_order(orders: java.util.List[OrderRow]) {
 
-    val trades = orders.toList.flatMap(o => matchingEngine.acceptOrder(o.price match {
+    orders.toList.foreach(o => matchingEngine.acceptOrder(o.price match {
       case "MO" => MarketOrder(o.broker, parseSide(o.side), o.qty)
       case _ => LimitOrder(o.broker, parseSide(o.side), o.qty, o.price.toDouble)
     }))
-    actualTrades = actualTrades ::: trades
   }
 
   @Then("^market order book looks like:$")
@@ -46,7 +49,7 @@ class MatchingEngineSteps extends ShouldMatchers {
   @Then("^the following trades are generated:$")
   def the_following_trades_are_generated(trades: java.util.List[Trade]) {
 
-    actualTrades should equal(trades.toList)
+    actualTrades.reverse should equal(trades.toList)
     actualTrades = Nil
   }
 
@@ -56,6 +59,14 @@ class MatchingEngineSteps extends ShouldMatchers {
     actualTrades should equal(Nil)
   }
 
+
+  private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
+    matchingEngine.subscribe(new matchingEngine.Sub {
+      def notify(pub: matchingEngine.Pub, event: OrderBookEvent) {
+        handler(event)
+      }
+    })
+  }
 
   private def parseExpectedBooks(book: DataTable): (List[BookRow], List[BookRow]) = {
     def buildOrders(orders: List[List[String]], side: Side) = {

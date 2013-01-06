@@ -1,5 +1,7 @@
 package com.prystupa.matching
 
+import collection.mutable
+
 /**
  * Created with IntelliJ IDEA.
  * User: eprystupa
@@ -7,15 +9,14 @@ package com.prystupa.matching
  * Time: 8:14 PM
  */
 
-class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => OrderType)) {
+class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => OrderType))
+  extends mutable.Publisher[OrderBookEvent] {
 
-  def acceptOrder(order: Order): List[Trade] = {
+  def acceptOrder(order: Order) {
 
     val (book, counterBook) = getBooks(order.side)
-    val (unfilledOrder, trades) = tryMatch(order, counterBook, Nil)
+    val unfilledOrder = tryMatch(order, counterBook)
     unfilledOrder.foreach(book.add(_))
-
-    trades.reverse
   }
 
 
@@ -24,16 +25,18 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => Orde
     case Sell => (sell, buy)
   }
 
-  private def tryMatch(order: Order, counterBook: OrderBook, trades: List[Trade]): (Option[Order], List[Trade]) = {
+  private def tryMatch(order: Order, counterBook: OrderBook): Option[Order] = {
 
-    if (order.qty == 0) (None, trades)
+    if (order.qty == 0) None
     else counterBook.top match {
-      case None => (Some(order), trades)
+      case None => Some(order)
       case Some(top) => tryMatchWithTop(order, top) match {
-        case None => (Some(order), trades)
+        case None => Some(order)
         case Some(trade) => {
           counterBook.decreaseTopBy(trade.qty)
-          tryMatch(orderTypes(order).decreasedBy(trade.qty), counterBook, trade :: trades)
+          publish(trade)
+          val unfilledOrder = orderTypes(order).decreasedBy(trade.qty)
+          tryMatch(unfilledOrder, counterBook)
         }
       }
     }
