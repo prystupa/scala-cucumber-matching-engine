@@ -6,10 +6,11 @@ package com.prystupa.matching
  * Date: 1/2/13
  * Time: 9:37 PM
  */
+
 trait OrderType {
   def bookDisplay: String
 
-  def price: Option[Double]
+  def price: PriceLevel
 }
 
 object OrderType {
@@ -19,7 +20,7 @@ object OrderType {
     case LimitOrder(_, _, _, limit) => new OrderType {
       def bookDisplay: String = limit.toString
 
-      def price: Option[Double] = Some(limit)
+      def price: PriceLevel = LimitPrice(limit)
     }
   }
 }

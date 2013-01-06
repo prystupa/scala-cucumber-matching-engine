@@ -17,8 +17,10 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
   def add(order: Order) {
 
     orderTypes(order).price match {
-      case None => market = market :+ order
-      case Some(level) => {
+
+      case MarketPrice => market = market :+ order
+
+      case LimitPrice(level) => {
         def insert(list: List[(Double, List[Order])]): List[(Double, List[Order])] = list match {
           case Nil => List((level, List(order)))
           case (head@(bookLevel, orders)) :: tail => priceOrdering.compare(level, bookLevel) match {

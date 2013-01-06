@@ -9,7 +9,7 @@ package com.prystupa.matching
 trait OrderType {
   def bookDisplay: String
 
-  def price: Option[Double]
+  def price: PriceLevel
 
   def crossesAt(price: Double): Boolean
 
@@ -23,7 +23,7 @@ object OrderType {
     case self@LimitOrder(_, side, _, limit) => new OrderType {
       def bookDisplay: String = limit.toString
 
-      def price: Option[Double] = Some(limit)
+      def price: PriceLevel = LimitPrice(limit)
 
       def crossesAt(price: Double): Boolean = side match {
         case Buy => price <= limit
@@ -34,7 +34,7 @@ object OrderType {
     }
 
     case self@MarketOrder(_, _, _) => new OrderType {
-      def price: Option[Double] = None
+      def price: PriceLevel = MarketPrice
 
       def crossesAt(price: Double): Boolean = true
 

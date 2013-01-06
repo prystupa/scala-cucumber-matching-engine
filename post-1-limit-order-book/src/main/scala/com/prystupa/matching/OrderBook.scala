@@ -17,7 +17,7 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
     orderTypes(order).price match {
 
-      case Some(level) =>
+      case LimitPrice(level) =>
         def insert(list: List[(Double, List[Order])]): List[(Double, List[Order])] = list match {
           case Nil => List((level, List(order)))
           case (head@(bookLevel, orders)) :: tail => priceOrdering.compare(level, bookLevel) match {
@@ -28,8 +28,6 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
         }
 
         limit = insert(limit)
-
-      case None => throw new NotImplementedError()
     }
   }
 
