@@ -1,5 +1,7 @@
 package com.prystupa.matching
 
+import com.prystupa.matching.OrderBook.ModifyOperations
+
 
 /**
  * Created with IntelliJ IDEA.
@@ -7,6 +9,17 @@ package com.prystupa.matching
  * Date: 12/22/12
  * Time: 1:33 PM
  */
+
+object OrderBook {
+
+  sealed trait ModifyOperations {
+
+    def top: Option[Order]
+
+    def decreaseTopBy(qty: Double)
+  }
+
+}
 
 class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
@@ -40,21 +53,30 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
   def bestLimit: Option[Double] = limit.headOption.map(_.limit)
 
-  def decreaseTopBy(qty: Double) {
-    def decrease(list: FastList[Order], top: Order) {
-      if (qty == top.qty) list.removeTop()
-      else list.updateTop(orderTypes(top).decreasedBy(qty))
-    }
+  def modify(worker: ModifyOperations => Unit) {
 
-    market.headOption match {
-      case Some(top) => decrease(market, top)
-      case None => limit.headOption match {
-        case Some(OrdersAtLimit(_, orders)) =>
-          decrease(orders, orders.head)
-          if (orders.isEmpty) limit.removeTop()
-        case None => throw new IllegalStateException("No top order in the book")
+    val book = this
+    worker(new ModifyOperations {
+
+      def top = book.top
+
+      def decreaseTopBy(qty: Double) {
+        def decrease(list: FastList[Order], top: Order) {
+          if (qty == top.qty) list.removeTop()
+          else list.updateTop(orderTypes(top).decreasedBy(qty))
+        }
+
+        market.headOption match {
+          case Some(top) => decrease(market, top)
+          case None => limit.headOption match {
+            case Some(OrdersAtLimit(_, orders)) =>
+              decrease(orders, orders.head)
+              if (orders.isEmpty) limit.removeTop()
+            case None => throw new IllegalStateException("No top order in the book")
+          }
+        }
       }
-    }
+    })
   }
 
   def orders(): List[Order] = market.toList ++ limit.flatMap(_.orders)

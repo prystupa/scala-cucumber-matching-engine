@@ -23,8 +23,10 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => Orde
   def acceptOrder(order: Order) {
 
     val (book, counterBook) = getBooks(order.side)
-    val unfilledOrder = tryMatch(order, counterBook)
-    unfilledOrder.foreach(book.add(_))
+    counterBook.modify(ops => {
+      val unfilledOrder = tryMatch(order, ops)
+      unfilledOrder.foreach(book.add(_))
+    })
   }
 
 
@@ -33,7 +35,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => Orde
     case Sell => (sell, buy)
   }
 
-  private def tryMatch(order: Order, counterBook: OrderBook): Option[Order] = {
+  private def tryMatch(order: Order, counterBook: OrderBook.ModifyOperations): Option[Order] = {
 
     if (order.qty == 0) None
     else counterBook.top match {

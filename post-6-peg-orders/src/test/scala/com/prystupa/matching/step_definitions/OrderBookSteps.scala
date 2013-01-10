@@ -49,7 +49,7 @@ class OrderBookSteps extends ShouldMatchers {
   def the_top_order_of_the_book_is_filled_by(sideString: String, qty: Double) {
 
     val (_, book) = getBook(sideString)
-    book.decreaseTopBy(qty)
+    book.modify(_.decreaseTopBy(qty))
   }
 
   @Then("^the best limit for \"([^\"]*)\" order book is \"([^\"]*)\"$")
@@ -69,7 +69,7 @@ class OrderBookSteps extends ShouldMatchers {
   def the_top_order_goes_away_from_the_book(sideString: String) {
 
     val (_, book) = getBook(sideString)
-    book.decreaseTopBy(book.orders().head.qty)
+    book.modify(_.decreaseTopBy(book.orders().head.qty))
   }
 
   def getBook(side: String) = side match {
