@@ -7,5 +7,7 @@ package com.prystupa.matching
  * Time: 11:03 PM
  */
 
+sealed trait OrderBookEvent
+
 case class Trade(buyingBroker: String, sellingBroker: String,
-                 price: Double, qty: Double)
+                 price: Double, qty: Double) extends OrderBookEvent
