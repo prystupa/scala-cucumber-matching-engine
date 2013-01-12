@@ -40,7 +40,7 @@ class FastList[A] private(seed: mutable.DoubleLinkedList[A]) extends Iterable[A]
     new ListEntry(lastEntry)
   }
 
-  def getOrInsertAt(positionSelector: A => Int, insert: => A): A = {
+  def getOrInsertAt(positionSelector: A => Int, insert: => A): Entry[A] = {
 
     var iter, node = first
     var lastCompare = 1
@@ -63,7 +63,7 @@ class FastList[A] private(seed: mutable.DoubleLinkedList[A]) extends Iterable[A]
       }
       else node
 
-    upserted.elem
+    new ListEntry(upserted)
   }
 
   def iterator: Iterator[A] = first.iterator

@@ -13,4 +13,4 @@ case object MarketPrice extends PriceLevel
 
 case class LimitPrice(limit: Double) extends PriceLevel
 
-case class PegPrice(limit: Double) extends PriceLevel
+case object PegPrice extends PriceLevel

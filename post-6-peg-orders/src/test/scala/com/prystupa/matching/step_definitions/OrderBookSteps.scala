@@ -20,17 +20,17 @@ class OrderBookSteps extends ShouldMatchers {
   val buyBook: OrderBook = new OrderBook(Buy, orderTypes)
   val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
 
+  var actualRejected = Vector.empty[Order]
+
+  events {
+    case RejectedOrder(order) => actualRejected = actualRejected :+ order
+  }
 
   @Given("^the following orders are added to the \"([^\"]*)\" book:$")
   def the_following_orders_are_added_to_the_book(sideString: String, orderTable: DataTable) {
 
     val (side, book) = getBook(sideString)
-    val orders = orderTable.asList[OrderRow](classOf[OrderRow]).toList.map(
-      r => r.price match {
-        case "MO" => MarketOrder(r.broker, side, r.qty)
-        case "Peg" => PegOrder(r.broker, side, r.qty)
-        case _ => LimitOrder(r.broker, side, r.qty, r.price.toDouble)
-      })
+    val orders = parseOrders(orderTable, side)
 
     orders.foreach(book.add)
   }
@@ -72,13 +72,41 @@ class OrderBookSteps extends ShouldMatchers {
     book.modify(_.decreaseTopBy(book.orders().head.qty))
   }
 
-  def getBook(side: String) = side match {
+  @Then("^the following \"([^\"]*)\" orders are rejected:$")
+  def the_following_orders_are_rejected(sideString: String, orderTable: DataTable) {
+
+    val (side, _) = getBook(sideString)
+    val expected = parseOrders(orderTable, side)
+
+    actualRejected should equal(expected)
+    actualRejected = Vector.empty
+  }
+
+
+  private def getBook(side: String) = side match {
     case "Buy" => (Buy, buyBook)
     case "Sell" => (Sell, sellBook)
   }
 
-  case class OrderRow(broker: String, qty: Double, price: String)
+  private def parseOrders(orderTable: DataTable, side: Side): Vector[Order] = {
+    orderTable.asList[OrderRow](classOf[OrderRow]).toVector.map(
+      r => r.price match {
+        case "MO" => MarketOrder(r.broker, side, r.qty)
+        case "Peg" => PegOrder(r.broker, side, r.qty)
+        case _ => LimitOrder(r.broker, side, r.qty, r.price.toDouble)
+      })
+  }
 
-  case class BookRow(broker: String, qty: Double, price: String)
+  private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
+    List(buyBook, sellBook).foreach(book => book.subscribe(new book.Sub {
+      def notify(pub: book.Pub, event: OrderBookEvent) {
+        handler(event)
+      }
+    }))
+  }
+
+  private case class OrderRow(broker: String, qty: Double, price: String)
+
+  private case class BookRow(broker: String, qty: Double, price: String)
 
 }

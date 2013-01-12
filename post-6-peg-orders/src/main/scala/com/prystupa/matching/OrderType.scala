@@ -45,17 +45,14 @@ object OrderType {
     }
 
     case self@PegOrder(_, side, _) => new OrderType {
-      lazy val bestLimit = (side match {
+      private lazy val book = side match {
         case Buy => buy
         case Sell => sell
-      }).bestLimit match {
-        case Some(limit) => limit
-        case None => throw new IllegalStateException("Pegged orders can't be placed in a book without best limit")
       }
 
       def bookDisplay: String = s"Peg($bestLimit)"
 
-      def price: PriceLevel = PegPrice(bestLimit)
+      def price: PriceLevel = PegPrice
 
       def crossesAt(price: Double): Boolean = side match {
         case Buy => price <= bestLimit
@@ -63,6 +60,11 @@ object OrderType {
       }
 
       def decreasedBy(qty: Double): Order = self.copy(qty = self.qty - qty)
+
+      private def bestLimit = book.bestLimit match {
+        case Some(limit) => limit
+        case None => throw new IllegalStateException("Pegged orders can't be placed in a book without best limit")
+      }
     }
   }
 }

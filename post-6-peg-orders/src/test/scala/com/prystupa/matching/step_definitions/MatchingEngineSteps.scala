@@ -21,10 +21,10 @@ class MatchingEngineSteps extends ShouldMatchers {
   val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
   val matchingEngine = new MatchingEngine(buyBook, sellBook, orderTypes)
 
-  var actualTrades = List[Trade]()
+  var actualTrades = Vector.empty[Trade]
 
   events {
-    case trade: Trade => actualTrades = trade :: actualTrades
+    case trade: Trade => actualTrades = actualTrades :+ trade
   }
 
 
@@ -49,14 +49,14 @@ class MatchingEngineSteps extends ShouldMatchers {
   @Then("^the following trades are generated:$")
   def the_following_trades_are_generated(trades: java.util.List[Trade]) {
 
-    actualTrades.reverse should equal(trades.toList)
-    actualTrades = Nil
+    actualTrades should equal(trades.toVector)
+    actualTrades = Vector.empty
   }
 
   @Then("^no trades are generated$")
   def no_trades_are_generated() {
 
-    actualTrades should equal(Nil)
+    actualTrades should equal(Vector.empty)
   }
 
   @Given("^the reference price is set to \"([^\"]*)\"$")
@@ -73,6 +73,7 @@ class MatchingEngineSteps extends ShouldMatchers {
 
 
   private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
+
     matchingEngine.subscribe(new matchingEngine.Sub {
       def notify(pub: matchingEngine.Pub, event: OrderBookEvent) {
         handler(event)

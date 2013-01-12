@@ -1,6 +1,7 @@
 package com.prystupa.matching
 
 import com.prystupa.matching.OrderBook.ModifyOperations
+import collection.mutable
 
 
 /**
@@ -21,20 +22,23 @@ object OrderBook {
 
 }
 
-class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
+class OrderBook(side: Side, orderTypes: (Order => OrderType))
+  extends mutable.Publisher[OrderBookEvent] {
 
   private case class OrdersAtLimit(limit: Double, orders: FastList[Order])
 
-  private val market: FastList[Order] = FastList()
-  private val limit = FastList[OrdersAtLimit]()
+  private case class OrderLocation(list: FastList.Entry[OrdersAtLimit], entry: FastList.Entry[Order])
+
+  private val marketBook: FastList[Order] = FastList()
+  private val limitBook = FastList[OrdersAtLimit]()
   private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
-  private var pegs: FastList[FastList.Entry[Order]] = FastList()
+  private var pegs: FastList[OrderLocation] = FastList()
 
   def add(order: Order) {
 
     orderTypes(order).price match {
 
-      case MarketPrice => market.append(order)
+      case MarketPrice => marketBook.append(order)
 
       case LimitPrice(level) => {
         val oldBestLimit = bestLimit
@@ -42,20 +46,29 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
         if (oldBestLimit != bestLimit) updatePegs()
       }
 
-      case PegPrice(level) => {
-        val pegOrder = insertLimit(level, order)
-        pegs.append(pegOrder)
+      case PegPrice => bestLimit match {
+        case Some(limit) =>
+          val pegOrder = insertLimit(limit, order)
+          pegs.append(pegOrder)
+        case None => publish(RejectedOrder(order))
       }
     }
   }
 
-  def top: Option[Order] = market.headOption orElse limit.headOption.map(_.orders.head)
+  def top: Option[Order] = marketBook.headOption orElse limitBook.headOption.map(_.orders.head)
 
-  def bestLimit: Option[Double] = limit.headOption.map(_.limit)
+  def bestLimit: Option[Double] = limitBook.headOption
+    .filter(_.orders.exists(orderTypes(_).price match {
+    case LimitPrice(_) => true
+    case _ => false
+  }))
+    .map(_.limit)
 
   def modify(worker: ModifyOperations => Unit) {
 
     val book = this
+    val oldBestLimit = bestLimit
+
     worker(new ModifyOperations {
 
       def top = book.top
@@ -66,36 +79,46 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
           else list.updateTop(orderTypes(top).decreasedBy(qty))
         }
 
-        market.headOption match {
-          case Some(top) => decrease(market, top)
-          case None => limit.headOption match {
+        marketBook.headOption match {
+          case Some(top) => decrease(marketBook, top)
+          case None => limitBook.headOption match {
             case Some(OrdersAtLimit(_, orders)) =>
               decrease(orders, orders.head)
-              if (orders.isEmpty) limit.removeTop()
+              if (orders.isEmpty) limitBook.removeTop()
             case None => throw new IllegalStateException("No top order in the book")
           }
         }
       }
     })
+
+    if (oldBestLimit != bestLimit) updatePegs()
   }
 
-  def orders(): List[Order] = market.toList ++ limit.flatMap(_.orders)
+  def orders(): List[Order] = marketBook.toList ++ limitBook.flatMap(_.orders)
 
-  private def insertLimit(level: Double, order: Order): FastList.Entry[Order] = {
+  private def insertLimit(level: Double, order: Order): OrderLocation = {
 
-    val OrdersAtLimit(_, orders) = limit.getOrInsertAt(
+    val entry = limitBook.getOrInsertAt(
       levelOrders => priceOrdering.compare(level, levelOrders.limit),
       OrdersAtLimit(level, FastList()))
+    val OrdersAtLimit(_, orders) = entry.value
 
-    orders.append(order)
+    OrderLocation(entry, orders.append(order))
+  }
+
+  private def removeLimit(orderLocation: OrderLocation) {
+    val entry = orderLocation.entry
+    val list = orderLocation.list
+    val orders = list.value.orders
+    entry.remove()
+    if (orders.isEmpty) list.remove()
+
   }
 
   private def updatePegs() {
     val pegsToResubmit = pegs
     pegs = FastList()
-    pegsToResubmit.foreach(peg => {
-      peg.remove()
-      add(peg.value)
-    })
+    pegsToResubmit.foreach(peg => removeLimit(peg))
+    pegsToResubmit.foreach(peg => add(peg.entry.value))
   }
 }

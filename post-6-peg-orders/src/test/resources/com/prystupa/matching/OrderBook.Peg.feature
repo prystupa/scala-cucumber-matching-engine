@@ -1,5 +1,33 @@
 Feature: Core Pegged Order Functionality
 
+  Scenario Outline: Adding pegged order to a book with no best limit to peg
+  If a book is empty than no best limit is available to peg, so we expect the order to be rejected
+  If a book only has market orders then best limit is also undefined, so we also expect the order to be rejected
+    Given the "<Side>" order book looks like:
+      | Broker | Qty | Price |
+    When the following orders are added to the "<Side>" book:
+      | Broker | Qty | Price |
+      | A      | 100 | Peg   |
+    Then the following "<Side>" orders are rejected:
+      | Broker | Qty | Price |
+      | A      | 100 | Peg   |
+    And the "<Side>" order book looks like:
+      | Broker | Qty | Price |
+    When the following orders are added to the "<Side>" book:
+      | Broker | Qty | Price |
+      | B      | 100 | MO    |
+      | C      | 100 | Peg   |
+    Then the following "<Side>" orders are rejected:
+      | Broker | Qty | Price |
+      | C      | 100 | Peg   |
+    And the "<Side>" order book looks like:
+      | Broker | Qty | Price |
+      | B      | 100 | MO    |
+  Examples:
+    | Side |
+    | Buy  |
+    | Sell |
+
   Scenario Outline: Price and time priority of pegged orders over market and limit orders
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price           |
@@ -62,3 +90,24 @@ Feature: Core Pegged Order Functionality
     | Side | First Limit | New Best Limit |
     | Buy  | 10.5        | 10.6           |
     | Sell | 10.5        | 10.4           |
+
+  Scenario Outline: Pegged order starts pegging less aggressive limit order when more aggressive leaves the book
+    When the following orders are added to the "<Side>" book:
+      | Broker | Qty | Price                   |
+      | A      | 100 | <More Aggressive Limit> |
+      | B      | 100 | <Less Aggressive Limit> |
+      | C      | 100 | Peg                     |
+    Then the "<Side>" order book looks like:
+      | Broker | Qty | Price                        |
+      | A      | 100 | <More Aggressive Limit>      |
+      | C      | 100 | Peg(<More Aggressive Limit>) |
+      | B      | 100 | <Less Aggressive Limit>      |
+    When the top order goes away from the "<Side>" book
+    Then the "<Side>" order book looks like:
+      | Broker | Qty | Price                        |
+      | B      | 100 | <Less Aggressive Limit>      |
+      | C      | 100 | Peg(<Less Aggressive Limit>) |
+  Examples:
+    | Side | More Aggressive Limit | Less Aggressive Limit |
+    | Buy  | 10.6                  | 10.5                  |
+    | Sell | 10.4                  | 10.5                  |
