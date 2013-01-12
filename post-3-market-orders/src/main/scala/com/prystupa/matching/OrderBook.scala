@@ -10,7 +10,7 @@ package com.prystupa.matching
 
 class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
-  private var market: List[Order] = Nil
+  private var marketBook: List[Order] = Nil
   private var limitBook: List[(Double, List[Order])] = Nil
   private val priceOrdering = if (side == Sell) Ordering[Double] else Ordering[Double].reverse
 
@@ -18,12 +18,12 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
     orderTypes(order).price match {
 
-      case MarketPrice => market = market :+ order
+      case MarketPrice => marketBook = marketBook :+ order
       case LimitPrice(limit) => addLimit(limit, order)
     }
   }
 
-  def top: Option[Order] = market match {
+  def top: Option[Order] = marketBook match {
     case head :: _ => Some(head)
     case _ => limitBook.headOption.map({
       case (_, orders) => orders.head
@@ -32,8 +32,8 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
 
   def decreaseTopBy(qty: Double) {
 
-    market match {
-      case top :: tail => market = if (qty == top.qty) tail else orderTypes(top).decreasedBy(qty) :: tail
+    marketBook match {
+      case top :: tail => marketBook = if (qty == top.qty) tail else orderTypes(top).decreasedBy(qty) :: tail
       case _ => limitBook match {
         case ((level, orders) :: tail) => {
           val (top :: rest) = orders
@@ -48,7 +48,7 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType)) {
     }
   }
 
-  def orders(): List[Order] = market ::: limitBook.flatMap({
+  def orders(): List[Order] = marketBook ::: limitBook.flatMap({
     case (_, orders) => orders
   })
 
