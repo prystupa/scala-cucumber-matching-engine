@@ -1,10 +1,11 @@
 Feature: Core Pegged Order Functionality
 
   Scenario Outline: Adding pegged order to a book with no best limit to peg
-  If a book is empty than no best limit is available to peg, so we expect the order to be rejected
+  If a book is empty then no best limit is available to peg, so we expect the order to be rejected
   If a book only has market orders then best limit is also undefined, so we also expect the order to be rejected
     Given the "<Side>" order book looks like:
       | Broker | Qty | Price |
+
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price |
       | A      | 100 | Peg   |
@@ -13,6 +14,7 @@ Feature: Core Pegged Order Functionality
       | A      | 100 | Peg   |
     And the "<Side>" order book looks like:
       | Broker | Qty | Price |
+
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price |
       | B      | 100 | MO    |
@@ -23,6 +25,7 @@ Feature: Core Pegged Order Functionality
     And the "<Side>" order book looks like:
       | Broker | Qty | Price |
       | B      | 100 | MO    |
+
   Examples:
     | Side |
     | Buy  |
@@ -111,3 +114,25 @@ Feature: Core Pegged Order Functionality
     | Side | More Aggressive Limit | Less Aggressive Limit |
     | Buy  | 10.6                  | 10.5                  |
     | Sell | 10.4                  | 10.5                  |
+
+  Scenario Outline: Pegged order is automatically canceled if the best limit of the order book disappears
+    Given the following orders are added to the "<Side>" book:
+      | Broker | Qty | Price |
+      | A      | 100 | 10.5  |
+      | B      | 100 | Peg   |
+    Then the "<Side>" order book looks like:
+      | Broker | Qty | Price     |
+      | A      | 100 | 10.5      |
+      | B      | 100 | Peg(10.5) |
+
+    When the top order goes away from the "<Side>" book
+    Then the following "<Side>" orders are cancelled:
+      | Broker | Qty | Price |
+      | B      | 100 | Peg   |
+    And the "<Side>" order book looks like:
+      | Broker | Qty | Price     |
+
+  Examples:
+    | Side |
+    | Buy  |
+    | Sell |

@@ -21,9 +21,11 @@ class OrderBookSteps extends ShouldMatchers {
   val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
 
   var actualRejected = Vector.empty[Order]
+  var actualCancelled = Vector.empty[Order]
 
   events {
-    case RejectedOrder(order) => actualRejected = actualRejected :+ order
+    case RejectedOrder(order) => actualRejected :+= order
+    case CancelledOrder(order) => actualCancelled :+= order
   }
 
   @Given("^the following orders are added to the \"([^\"]*)\" book:$")
@@ -80,6 +82,16 @@ class OrderBookSteps extends ShouldMatchers {
 
     actualRejected should equal(expected)
     actualRejected = Vector.empty
+  }
+
+  @Then("^the following \"([^\"]*)\" orders are cancelled:$")
+  def the_following_orders_are_cancelled(sideString: String, orderTable: DataTable) {
+
+    val (side, _) = getBook(sideString)
+    val expected = parseOrders(orderTable, side)
+
+    actualCancelled should equal(expected)
+    actualCancelled = Vector.empty
   }
 
 
