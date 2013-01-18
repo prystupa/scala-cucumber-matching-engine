@@ -15,6 +15,7 @@
         <module>post-4-market-orders-best-limit</module>
         <module>post-5-market-orders-reference-price</module>
         <module>post-6-peg-orders</module>
+        <module>post-7-peg-orders-matching</module>
     </modules>
 
     <properties>
