@@ -11,10 +11,18 @@ trait Order {
   val broker: String
   val qty: Double
   val side: Side
+
+  def withQty(qty: Double): Order
 }
 
-case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order
+case class LimitOrder(broker: String, side: Side, qty: Double, limit: Double) extends Order {
+  def withQty(qty: Double): LimitOrder = copy(qty = qty)
+}
 
-case class MarketOrder(broker: String, side: Side, qty: Double) extends Order
+case class MarketOrder(broker: String, side: Side, qty: Double) extends Order {
+  def withQty(qty: Double): MarketOrder = copy(qty = qty)
+}
 
-case class PegOrder(broker: String, side: Side, qty: Double) extends Order
+case class PegOrder(broker: String, side: Side, qty: Double) extends Order {
+  def withQty(qty: Double): PegOrder = copy(qty = qty)
+}

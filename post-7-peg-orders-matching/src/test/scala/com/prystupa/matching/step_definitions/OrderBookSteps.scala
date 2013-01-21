@@ -14,11 +14,10 @@ import cucumber.api.java.en.{When, Then, Given}
  * Time: 3:22 PM
  */
 
-class OrderBookSteps extends ShouldMatchers {
+class OrderBookSteps extends OrderStepUtils with ShouldMatchers {
 
-  val orderTypes = OrderType.all(buyBook, sellBook)
-  val buyBook: OrderBook = new OrderBook(Buy, orderTypes)
-  val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
+  val buyBook: OrderBook = new OrderBook(Buy)
+  val sellBook: OrderBook = new OrderBook(Sell)
 
   var actualRejected = Vector.empty[Order]
   var actualCancelled = Vector.empty[Order]
@@ -29,10 +28,10 @@ class OrderBookSteps extends ShouldMatchers {
   }
 
   @Given("^the following orders are added to the \"([^\"]*)\" book:$")
-  def the_following_orders_are_added_to_the_book(sideString: String, orderTable: DataTable) {
+  def the_following_orders_are_added_to_the_book(side: String, orderTable: java.util.List[OrderRow]) {
 
-    val (side, book) = getBook(sideString)
-    val orders = parseOrders(orderTable, side)
+    val (_, book) = getBook(side)
+    val orders = orderTable.toVector.map(r => parseOrder(r.broker, side, r.qty, r.price))
 
     orders.foreach(book.add)
   }
@@ -42,7 +41,7 @@ class OrderBookSteps extends ShouldMatchers {
 
     val (_, book) = getBook(sideString)
     val expectedBook = bookTable.asList[BookRow](classOf[BookRow]).toList
-    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, orderTypes(o).bookDisplay))
+    val actualBook = book.orders().map(o => BookRow(o.broker, o.qty, bookDisplay(o)))
 
     actualBook should equal(expectedBook)
   }
@@ -75,39 +74,23 @@ class OrderBookSteps extends ShouldMatchers {
   }
 
   @Then("^the following \"([^\"]*)\" orders are rejected:$")
-  def the_following_orders_are_rejected(sideString: String, orderTable: DataTable) {
+  def the_following_orders_are_rejected(side: String, orderTable: java.util.List[OrderRow]) {
 
-    val (side, _) = getBook(sideString)
-    val expected = parseOrders(orderTable, side)
+    val expected = orderTable.toVector.map(r => parseOrder(r.broker, side, r.qty, r.price))
 
     actualRejected should equal(expected)
     actualRejected = Vector.empty
   }
 
   @Then("^the following \"([^\"]*)\" orders are cancelled:$")
-  def the_following_orders_are_cancelled(sideString: String, orderTable: DataTable) {
+  def the_following_orders_are_cancelled(side: String, orderTable: java.util.List[OrderRow]) {
 
-    val (side, _) = getBook(sideString)
-    val expected = parseOrders(orderTable, side)
+    val expected = orderTable.toVector.map(r => parseOrder(r.broker, side, r.qty, r.price))
 
     actualCancelled should equal(expected)
     actualCancelled = Vector.empty
   }
 
-
-  private def getBook(side: String) = side match {
-    case "Buy" => (Buy, buyBook)
-    case "Sell" => (Sell, sellBook)
-  }
-
-  private def parseOrders(orderTable: DataTable, side: Side): Vector[Order] = {
-    orderTable.asList[OrderRow](classOf[OrderRow]).toVector.map(
-      r => r.price match {
-        case "MO" => MarketOrder(r.broker, side, r.qty)
-        case "Peg" => PegOrder(r.broker, side, r.qty)
-        case _ => LimitOrder(r.broker, side, r.qty, r.price.toDouble)
-      })
-  }
 
   private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
     List(buyBook, sellBook).foreach(book => book.subscribe(new book.Sub {

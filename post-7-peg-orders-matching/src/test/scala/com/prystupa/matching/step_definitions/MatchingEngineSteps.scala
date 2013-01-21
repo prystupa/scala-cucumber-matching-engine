@@ -14,27 +14,27 @@ import org.scalatest.matchers.ShouldMatchers
  * Time: 8:46 PM
  */
 
-class MatchingEngineSteps extends ShouldMatchers {
+class MatchingEngineSteps extends OrderStepUtils with ShouldMatchers {
 
-  val orderTypes = OrderType.all(buyBook, sellBook)
-  val buyBook: OrderBook = new OrderBook(Buy, orderTypes)
-  val sellBook: OrderBook = new OrderBook(Sell, orderTypes)
-  val matchingEngine = new MatchingEngine(buyBook, sellBook, orderTypes)
+  val buyBook: OrderBook = new OrderBook(Buy)
+  val sellBook: OrderBook = new OrderBook(Sell)
+  val matchingEngine = new MatchingEngine(buyBook, sellBook)
 
   var actualTrades = Vector.empty[Trade]
+  var actualRejected = Vector.empty[Order]
+  var actualCancelled = Vector.empty[Order]
 
   events {
     case trade: Trade => actualTrades = actualTrades :+ trade
+    case RejectedOrder(order) => actualRejected = actualRejected :+ order
+    case CancelledOrder(order) => actualCancelled = actualCancelled :+ order
   }
 
 
   @When("^the following orders are submitted in this order:$")
   def the_following_orders_are_submitted_in_this_order(orders: java.util.List[OrderRow]) {
 
-    orders.toList.foreach(o => matchingEngine.acceptOrder(o.price match {
-      case "MO" => MarketOrder(o.broker, parseSide(o.side), o.qty)
-      case _ => LimitOrder(o.broker, parseSide(o.side), o.qty, o.price.toDouble)
-    }))
+    orders.toList.foreach(r => matchingEngine.acceptOrder(parseOrder(r.broker, r.side, r.qty, r.price)))
   }
 
   @Then("^market order book looks like:$")
@@ -42,8 +42,8 @@ class MatchingEngineSteps extends ShouldMatchers {
 
     val (buyOrders, sellOrders) = parseExpectedBooks(book)
 
-    buyBook.orders().map(o => BookRow(Buy, o.broker, o.qty, orderTypes(o).bookDisplay)) should equal(buyOrders)
-    sellBook.orders().map(o => BookRow(Sell, o.broker, o.qty, orderTypes(o).bookDisplay)) should equal(sellOrders)
+    buyBook.orders().map(o => BookRow(Buy, o.broker, o.qty, bookDisplay(o))) should equal(buyOrders)
+    sellBook.orders().map(o => BookRow(Sell, o.broker, o.qty, bookDisplay(o))) should equal(sellOrders)
   }
 
   @Then("^the following trades are generated:$")
@@ -71,14 +71,23 @@ class MatchingEngineSteps extends ShouldMatchers {
     matchingEngine.referencePrice should equal(price)
   }
 
+  @Then("^the following orders are rejected:$")
+  def the_following_orders_are_rejected(orders: java.util.List[OrderRow]) {
+
+    val expected = orders.map(r => parseOrder(r.broker, r.side, r.qty, r.price))
+
+    actualRejected should equal(expected)
+    actualRejected = Vector.empty
+  }
+
 
   private def events(handler: PartialFunction[OrderBookEvent, Unit]) {
 
-    matchingEngine.subscribe(new matchingEngine.Sub {
-      def notify(pub: matchingEngine.Pub, event: OrderBookEvent) {
+    List(matchingEngine, buyBook, sellBook).foreach(publisher => publisher.subscribe(new publisher.Sub {
+      def notify(pub: publisher.Pub, event: OrderBookEvent) {
         handler(event)
       }
-    })
+    }))
   }
 
   private def parseExpectedBooks(book: DataTable): (List[BookRow], List[BookRow]) = {
@@ -93,11 +102,6 @@ class MatchingEngineSteps extends ShouldMatchers {
     val buy = orders.map(_.take(3))
     val sell = orders.map(_.drop(3).reverse)
     (buildOrders(buy, Buy), buildOrders(sell, Sell))
-  }
-
-  private def parseSide(s: String): Side = s.toLowerCase match {
-    case "buy" => Buy
-    case "sell" => Sell
   }
 
   private case class OrderRow(broker: String, side: String, qty: Double, price: String)

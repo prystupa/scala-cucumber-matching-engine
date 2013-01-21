@@ -9,8 +9,7 @@ import collection.mutable
  * Time: 8:14 PM
  */
 
-class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => OrderType))
-  extends mutable.Publisher[OrderBookEvent] {
+class MatchingEngine(buy: OrderBook, sell: OrderBook) extends mutable.Publisher[OrderBookEvent] {
 
   private var _referencePrice: Option[Double] = None
 
@@ -45,7 +44,7 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => Orde
         case Some(trade) => {
           counterBook.decreaseTopBy(trade.qty)
           publish(trade)
-          val unfilledOrder = orderTypes(order).decreasedBy(trade.qty)
+          val unfilledOrder = order.withQty(order.qty - trade.qty)
           tryMatch(unfilledOrder, counterBook)
         }
       }
@@ -59,30 +58,33 @@ class MatchingEngine(buy: OrderBook, sell: OrderBook, orderTypes: (Order => Orde
       Some(Trade(buy.broker, sell.broker, price, math.min(buy.qty, sell.qty)))
     }
 
-    lazy val oppositeBestLimit = {
-      val oppositeBook = if (order.side == Buy) sell else buy
-      oppositeBook.bestLimit
+    def crosses(limit: Double, price: Double) = order.side match {
+      case Buy => price <= limit
+      case Sell => price >= limit
     }
 
-    (order, top) match {
+    val (book, oppositeBook) = getBooks(order.side)
 
-      case (_, topLimitOrder: LimitOrder) => {
-        if (orderTypes(order).crossesAt(topLimitOrder.limit)) trade(topLimitOrder.limit)
+    (book.valueOf(order), oppositeBook.valueOf(top)) match {
+
+      case (MarketPrice, LimitPrice(limit)) => trade(limit)
+
+      case (LimitPrice(limit), LimitPrice(oppositeLimit)) => {
+        if (crosses(limit, oppositeLimit)) trade(oppositeLimit)
         else None
       }
 
-      case (limitOrder: LimitOrder, _: MarketOrder) => trade(oppositeBestLimit match {
-        case Some(limit) => if (orderTypes(limitOrder).crossesAt(limit)) limit else limitOrder.limit
-        case None => limitOrder.limit
+      case (LimitPrice(limit), MarketPrice) => trade(oppositeBook.bestLimit match {
+        case Some(bestLimit) => if (crosses(limit, bestLimit)) bestLimit else limit
+        case None => limit
       })
 
-      case (_: MarketOrder, _: MarketOrder) => trade(oppositeBestLimit match {
+      case (MarketPrice, MarketPrice) => trade(oppositeBook.bestLimit match {
         case Some(limit) => limit
-        case None => _referencePrice match {
-          case Some(price) => price
-          case None => throw new IllegalStateException("Can't execute a trade with two market orders without best limit or reference price")
-        }
+        case None => _referencePrice.getOrElse(throw new IllegalStateException("Can't execute a trade with two market orders without best limit or reference price"))
       })
+
+      case (UndefinedPrice, _) | (_, UndefinedPrice) => None
     }
   }
 }

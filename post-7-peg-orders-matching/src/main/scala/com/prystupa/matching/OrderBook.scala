@@ -22,8 +22,7 @@ object OrderBook {
 
 }
 
-class OrderBook(side: Side, orderTypes: (Order => OrderType))
-  extends mutable.Publisher[OrderBookEvent] {
+class OrderBook(side: Side) extends mutable.Publisher[OrderBookEvent] {
 
   private case class OrdersAtLimit(limit: Double, orders: FastList[Order])
 
@@ -36,20 +35,22 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType))
 
   def add(order: Order) {
 
-    orderTypes(order).price match {
-
-      case MarketPrice => marketBook.append(order)
-      case LimitPrice(limit) => addLimit(limit, order)
-      case PegPrice => addPeg(order, isNewOrder = true)
+    order match {
+      case _: MarketOrder => marketBook.append(order)
+      case LimitOrder(_, _, _, limit) => addLimit(limit, order)
+      case _: PegOrder => addPeg(order, isNewOrder = true)
     }
+  }
+
+  def valueOf(order: Order): PriceLevel = order match {
+    case _: MarketOrder => MarketPrice
+    case LimitOrder(_, _, _, limit) => LimitPrice(limit)
+    case _: PegOrder => bestLimit.map(LimitPrice(_)).getOrElse(UndefinedPrice)
   }
 
   def top: Option[Order] = marketBook.headOption orElse limitBook.headOption.map(_.orders.head)
 
-  def bestLimit: Option[Double] = limitBook.headOption.filter(_.orders.exists(orderTypes(_).price match {
-    case LimitPrice(_) => true
-    case _ => false
-  })).map(_.limit)
+  def bestLimit: Option[Double] = limitBook.headOption.map(_.limit)
 
   def modify(worker: ModifyOperations => Unit) {
 
@@ -61,16 +62,17 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType))
       def top = book.top
 
       def decreaseTopBy(qty: Double) {
-        def decrease(list: FastList[Order], top: Order) {
+        def decrease(list: FastList[Order]) {
+          val top = list.head
           if (qty == top.qty) list.removeTop()
-          else list.updateTop(orderTypes(top).decreasedBy(qty))
+          else list.updateTop(top.withQty(top.qty - qty))
         }
 
         marketBook.headOption match {
-          case Some(top) => decrease(marketBook, top)
+          case Some(_) => decrease(marketBook)
           case None => limitBook.headOption match {
             case Some(OrdersAtLimit(_, orders)) =>
-              decrease(orders, orders.head)
+              decrease(orders)
               if (orders.isEmpty) limitBook.removeTop()
             case None => throw new IllegalStateException("No top order in the book")
           }
@@ -78,10 +80,17 @@ class OrderBook(side: Side, orderTypes: (Order => OrderType))
       }
     })
 
-    if (oldBestLimit != bestLimit) updatePegs()
+    if (bestLimitChanged(oldBestLimit)) updatePegs()
   }
 
   def orders(): List[Order] = marketBook.toList ++ limitBook.flatMap(_.orders)
+
+  private def bestLimitChanged(old: Option[Double]): Boolean = {
+    limitBook.headOption.withFilter(_.orders.exists({
+      case _: LimitOrder => true
+      case _ => false
+    })).map(_.limit) != old
+  }
 
   private def addPeg(order: Order, isNewOrder: Boolean) {
     bestLimit match {
