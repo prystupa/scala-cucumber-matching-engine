@@ -81,6 +81,7 @@ class FastList[A] private(seed: mutable.DoubleLinkedList[A]) extends Iterable[A]
     def value: A = node.elem
 
     def remove() {
+      if (node == lastEntry) lastEntry = node.prev
       node.remove()
     }
 

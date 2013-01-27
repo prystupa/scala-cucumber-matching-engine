@@ -2,6 +2,8 @@ package com.prystupa.matching
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,6 +12,7 @@ import org.scalatest.matchers.ShouldMatchers
  * Time: 7:51 AM
  */
 
+@RunWith(classOf[JUnitRunner])
 class FastListTest extends FunSuite with ShouldMatchers {
 
   test("append, update, and remove a single element") {
@@ -52,7 +55,7 @@ class FastListTest extends FunSuite with ShouldMatchers {
     val target = FastList[Int]()
 
     val upserted = target.getOrInsertAt(null, 1)
-    upserted should equal(1)
+    upserted.value should equal(1)
     target.toList should equal(List(1))
   }
 
@@ -60,7 +63,7 @@ class FastListTest extends FunSuite with ShouldMatchers {
     val target = FastList[Int](2)
 
     val upserted = target.getOrInsertAt(1.compareTo(_), 1)
-    upserted should equal(1)
+    upserted.value should equal(1)
     target.toList should equal(List(1, 2))
 
     target.removeTop()
@@ -74,7 +77,7 @@ class FastListTest extends FunSuite with ShouldMatchers {
     val target = FastList[Int](1, 3)
 
     val upserted = target.getOrInsertAt(2.compareTo(_), 2)
-    upserted should equal(2)
+    upserted.value should equal(2)
     target.toList should equal(List(1, 2, 3))
 
     target.removeTop()
@@ -91,7 +94,7 @@ class FastListTest extends FunSuite with ShouldMatchers {
     val target = FastList[Int](1, 2)
 
     val upserted = target.getOrInsertAt(3.compareTo(_), 3)
-    upserted should equal(3)
+    upserted.value should equal(3)
     target.toList should equal(List(1, 2, 3))
 
     target.removeTop()
@@ -109,8 +112,8 @@ class FastListTest extends FunSuite with ShouldMatchers {
 
     val first = target.getOrInsertAt(1.compareTo(_), 1)
     val second = target.getOrInsertAt(2.compareTo(_), 2)
-    first should equal(1)
-    second should equal(2)
+    first.value should equal(1)
+    second.value should equal(2)
     target.toList should equal(List(1, 2))
 
     target.removeTop()
@@ -124,7 +127,7 @@ class FastListTest extends FunSuite with ShouldMatchers {
     val target = FastList[Int](1, 2, 3)
 
     val retrieved = target.getOrInsertAt(2.compareTo(_), 200)
-    retrieved should equal(2)
+    retrieved.value should equal(2)
     target.toList should equal(List(1, 2, 3))
 
     target.removeTop()
@@ -135,5 +138,27 @@ class FastListTest extends FunSuite with ShouldMatchers {
 
     target.removeTop()
     target.toList should equal(Nil)
+  }
+
+  test("append after removing the only element") {
+    val target = FastList[Int]()
+
+    val first = target.append(1)
+    first.remove()
+
+    target.append(2)
+
+    target.toList should equal(List(2))
+  }
+
+  test("append after removing the last element") {
+    val target = FastList[Int](1)
+
+    val second = target.append(2)
+    second.remove()
+
+    target.append(3)
+
+    target.toList should equal(List(1, 3))
   }
 }
