@@ -2,6 +2,8 @@ package com.prystupa.matching
 
 import org.scalatest.FunSuite
 import org.scalatest.matchers.ShouldMatchers
+import org.junit.runner.RunWith
+import org.scalatest.junit.JUnitRunner
 
 /**
  * Created with IntelliJ IDEA.
@@ -10,6 +12,7 @@ import org.scalatest.matchers.ShouldMatchers
  * Time: 7:51 AM
  */
 
+@RunWith(classOf[JUnitRunner])
 class FastListTest extends FunSuite with ShouldMatchers {
 
   test("append, update, and remove a single element") {
