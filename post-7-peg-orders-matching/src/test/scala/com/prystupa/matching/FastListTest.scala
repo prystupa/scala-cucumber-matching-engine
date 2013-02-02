@@ -161,4 +161,44 @@ class FastListTest extends FunSuite with ShouldMatchers {
 
     target.toList should equal(List(1, 3))
   }
+
+  test("remove a single element") {
+    val target = FastList(1)
+
+    val removed = FastList[Int]()
+    target.removeInto(removed, _ => true)
+
+    removed.toList should equal(List(1))
+    target.toList should equal(Nil)
+  }
+
+  test("remove first element of two") {
+    val target = new FastList(1, 2)
+
+    val removed = FastList[Int]()
+    target.removeInto(removed, _ == 1)
+
+    removed.toList should equal(List(1))
+    target.toList should equal(List(2))
+  }
+
+  test("remove the second element of two") {
+    val target = new FastList(1, 2)
+
+    val removed = FastList[Int]()
+    target.removeInto(removed, _ == 2)
+
+    removed.toList should equal(List(2))
+    target.toList should equal(List(1))
+  }
+
+  test("remove all elements of two") {
+    val target = new FastList(1, 2)
+
+    val removed = FastList[Int]()
+    target.removeInto(removed, _ => true)
+
+    removed.toList should equal(List(1, 2))
+    target.toList should equal(Nil)
+  }
 }

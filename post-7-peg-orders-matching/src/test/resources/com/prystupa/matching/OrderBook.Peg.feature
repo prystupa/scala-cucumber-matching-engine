@@ -72,6 +72,7 @@ Feature: Core Pegged Order Functionality
     | Buy  | 10.5      | 10.4          |
     | Sell | 10.5      | 10.6          |
 
+
   Scenario Outline: Pegged order starts pegging more aggressive limit order when the latter enters the book
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price         |
@@ -94,6 +95,7 @@ Feature: Core Pegged Order Functionality
     | Buy  | 10.5        | 10.6           |
     | Sell | 10.5        | 10.4           |
 
+
   Scenario Outline: Pegged order starts pegging less aggressive limit order when more aggressive leaves the book
     When the following orders are added to the "<Side>" book:
       | Broker | Qty | Price                   |
@@ -115,6 +117,7 @@ Feature: Core Pegged Order Functionality
     | Buy  | 10.6                  | 10.5                  |
     | Sell | 10.4                  | 10.5                  |
 
+
   Scenario Outline: Pegged order is automatically canceled if the best limit of the order book disappears
     Given the following orders are added to the "<Side>" book:
       | Broker | Qty | Price |
@@ -130,7 +133,7 @@ Feature: Core Pegged Order Functionality
       | Broker | Qty | Price |
       | B      | 100 | Peg   |
     And the "<Side>" order book looks like:
-      | Broker | Qty | Price     |
+      | Broker | Qty | Price |
 
   Examples:
     | Side |

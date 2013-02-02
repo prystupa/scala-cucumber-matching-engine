@@ -76,6 +76,19 @@ class FastList[A] private(seed: mutable.DoubleLinkedList[A]) extends Iterable[A]
     first.elem = elem
   }
 
+  def removeInto(list: FastList[A], filter: A => Boolean) {
+
+    var iter = first
+    while (!iter.isEmpty) {
+      if (filter(iter.elem)) {
+        iter.remove()
+        list.append(iter.elem)
+      }
+      iter = iter.next
+    }
+  }
+
+
   private case class ListEntry(node: mutable.DoubleLinkedList[A]) extends Entry[A] {
 
     def value: A = node.elem

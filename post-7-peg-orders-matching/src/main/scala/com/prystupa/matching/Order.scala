@@ -7,7 +7,7 @@ package com.prystupa.matching
  * Time: 11:59 AM
  */
 
-trait Order {
+sealed trait Order {
   val broker: String
   val qty: Double
   val side: Side
@@ -23,6 +23,6 @@ case class MarketOrder(broker: String, side: Side, qty: Double) extends Order {
   def withQty(qty: Double): MarketOrder = copy(qty = qty)
 }
 
-case class PegOrder(broker: String, side: Side, qty: Double) extends Order {
+case class PegOrder(broker: String, side: Side, qty: Double, limit: Option[Double]) extends Order {
   def withQty(qty: Double): PegOrder = copy(qty = qty)
 }
