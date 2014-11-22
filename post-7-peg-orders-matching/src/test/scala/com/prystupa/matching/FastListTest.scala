@@ -1,7 +1,7 @@
 package com.prystupa.matching
 
 import org.scalatest.FunSuite
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers._
 import org.junit.runner.RunWith
 import org.scalatest.junit.JUnitRunner
 
@@ -13,7 +13,7 @@ import org.scalatest.junit.JUnitRunner
  */
 
 @RunWith(classOf[JUnitRunner])
-class FastListTest extends FunSuite with ShouldMatchers {
+class FastListTest extends FunSuite {
 
   test("append, update, and remove a single element") {
     val target = FastList[Int]()

@@ -2,7 +2,7 @@ package com.prystupa.matching.step_definitions
 
 import cucumber.api.DataTable
 import com.prystupa.matching._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers._
 
 import scala.collection.JavaConversions._
 import cucumber.api.java.en.{When, Then, Given}
@@ -14,7 +14,7 @@ import cucumber.api.java.en.{When, Then, Given}
  * Time: 3:22 PM
  */
 
-class OrderBookSteps extends ShouldMatchers {
+class OrderBookSteps {
 
   val orderTypes = OrderType.all(buyBook, sellBook)
   val buyBook: OrderBook = new OrderBook(Buy, orderTypes)

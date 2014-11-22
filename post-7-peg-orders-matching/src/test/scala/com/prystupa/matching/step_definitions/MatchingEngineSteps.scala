@@ -5,7 +5,7 @@ import scala.collection.JavaConversions._
 import cucumber.api.java.en.{Given, When, Then}
 import cucumber.api.DataTable
 import com.prystupa.matching._
-import org.scalatest.matchers.ShouldMatchers
+import org.scalatest.Matchers._
 
 /**
  * Created with IntelliJ IDEA.
@@ -14,7 +14,7 @@ import org.scalatest.matchers.ShouldMatchers
  * Time: 8:46 PM
  */
 
-class MatchingEngineSteps extends OrderStepUtils with ShouldMatchers {
+class MatchingEngineSteps extends OrderStepUtils {
 
   val buyBook: OrderBook = new OrderBook(Buy)
   val sellBook: OrderBook = new OrderBook(Sell)
