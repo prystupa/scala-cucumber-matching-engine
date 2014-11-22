@@ -47,8 +47,8 @@ class OrderBookSteps extends ShouldMatchers {
     case "Sell" => (Sell, sellBook)
   }
 
-  case class OrderRow(broker: String, qty: Double, price: String)
+  private case class OrderRow(broker: String, qty: Double, price: String)
 
-  case class BookRow(broker: String, qty: Double, price: String)
+  private case class BookRow(broker: String, qty: Double, price: String)
 
 }
