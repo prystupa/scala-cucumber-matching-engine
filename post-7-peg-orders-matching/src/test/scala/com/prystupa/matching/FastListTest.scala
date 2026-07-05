@@ -201,4 +201,17 @@ class FastListTest extends FunSuite {
     removed.toList should equal(List(1, 2))
     target.toList should equal(Nil)
   }
+
+  test("append after removing the last element via removeInto") {
+    val target = FastList[Int]()
+    target.append(1)
+    target.append(2)
+
+    val removed = FastList[Int]()
+    target.removeInto(removed, _ == 2)
+    target.append(3)
+
+    removed.toList should equal(List(2))
+    target.toList should equal(List(1, 3))
+  }
 }

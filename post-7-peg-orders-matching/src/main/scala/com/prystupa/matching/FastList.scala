@@ -81,6 +81,7 @@ class FastList[A] private(seed: mutable.DoubleLinkedList[A]) extends Iterable[A]
     var iter = first
     while (!iter.isEmpty) {
       if (filter(iter.elem)) {
+        if (iter == lastEntry) lastEntry = iter.prev
         iter.remove()
         list.append(iter.elem)
       }
